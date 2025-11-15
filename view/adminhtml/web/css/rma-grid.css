@@ -1,0 +1,170 @@
+/* File: view/adminhtml/web/css/rma-grid.css */
+
+/* RMA Grid Styling */
+.admin__data-grid-wrap .data-grid .data-grid-cell-content {
+    padding: 8px 10px;
+    word-wrap: break-word;
+}
+
+/* Product names column with line breaks */
+.admin__data-grid-wrap .data-grid td[data-bind*="product_names"] {
+    max-width: 300px;
+    white-space: normal;
+    line-height: 1.5;
+}
+
+/* Status column styling */
+.admin__data-grid-wrap .data-grid td[data-bind*="status"] {
+    font-weight: 600;
+}
+
+.rma-status-pending {
+    color: #ff9800;
+}
+
+.rma-status-approved,
+.rma-status-accepted {
+    color: #4caf50;
+}
+
+.rma-status-rejected {
+    color: #f44336;
+}
+
+.rma-status-processing {
+    color: #2196f3;
+}
+
+/* RMA Type badges */
+.rma-type-exchange {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.rma-type-return {
+    background: #fff3e0;
+    color: #f57c00;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Pickup Scheduled badges */
+.pickup-scheduled-yes {
+    background: #4caf50;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pickup-scheduled-no {
+    background: #ff9800;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Customer Pickup Submitted badges - NEW */
+.grid-severity-notice span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.grid-severity-critical span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+/* Actions column */
+.admin__data-grid-wrap .data-grid .action-menu-item {
+    padding: 5px 10px;
+}
+
+/* Fix checkbox alignment */
+.admin__data-grid-wrap .data-grid-checkbox-cell {
+    vertical-align: middle;
+    text-align: center;
+}
+
+.admin__data-grid-wrap .data-grid-checkbox-cell input[type="checkbox"] {
+    margin: 0;
+}
+
+/* Improve header alignment */
+.admin__data-grid-wrap .data-grid thead th {
+    vertical-align: middle;
+    padding: 10px;
+}
+
+/* Ensure proper column widths */
+.admin__data-grid-wrap .data-grid col[data-role="rma_order_id"] {
+    width: 80px;
+}
+
+.admin__data-grid-wrap .data-grid col[data-role="order_increment_id"] {
+    width: 120px;
+}
+
+.admin__data-grid-wrap .data-grid col[data-role="customer_name"] {
+    width: 150px;
+}
+
+.admin__data-grid-wrap .data-grid col[data-role="product_names"] {
+    width: auto;
+    min-width: 200px;
+}
+
+.admin__data-grid-wrap .data-grid col[data-role="rma_type"] {
+    width: 100px;
+}
+
+.admin__data-grid-wrap .data-grid col[data-role="status"] {
+    width: 120px;
+}
+
+.admin__data-grid-wrap .data-grid col[data-role="customer_pickup_submitted"] {
+    width: 160px;
+}
+
+.admin__data-grid-wrap .data-grid col[data-role="pickup_scheduled"] {
+    width: 160px;
+}
+
+.admin__data-grid-wrap .data-grid col[data-role="actions"] {
+    width: 107px;
+}
+
+/* Column text alignment */
+.admin__data-grid-wrap .data-grid td[data-bind*="pickup_scheduled"],
+.admin__data-grid-wrap .data-grid td[data-bind*="customer_pickup_submitted"] {
+    text-align: center;
+}
+
+/* Grid severity indicators - override default Magento styles */
+.grid-severity-notice {
+    background-color: #4caf50 !important;
+    color: white !important;
+}
+
+.grid-severity-minor {
+    background-color: #ff9800 !important;
+    color: white !important;
+}
+
+.grid-severity-critical {
+    background-color: #f44336 !important;
+    color: white !important;
+}

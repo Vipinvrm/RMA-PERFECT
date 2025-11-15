@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="2columns-left" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+	<head>
+		<title>My Returns</title>
+		<css src="Krishaweb_Rma::css/rma.css" />
+		<css src="Krishaweb_Rma::css/timeline.css" />
+		<css src="Krishaweb_Rma::css/pickup.css" />
+	</head>
+    <referenceContainer name="content">
+        <block class="Krishaweb\Rma\Block\History" name="rma_rma_history" template="Krishaweb_Rma::rma/history.phtml" />
+    </referenceContainer>
+</page>

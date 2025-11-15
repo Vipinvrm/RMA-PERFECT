@@ -1,0 +1,674 @@
+<?php
+/**
+ * @var $block \Krishaweb\Rma\Block\Generate
+ */
+$id = $this->getRequest()->getParam('id');
+$orderData = $block->getOrderData($id);
+
+// Check if RMA is allowed for this order
+$rmaCheck = $block->isRmaAllowed($id);
+?>
+
+<div class="rma-generate-container">
+    <div class="page-title-wrapper">
+        <h1 class="page-title">
+            <span class="base"><?php echo __('Request RMA for Order #%1', $id); ?></span>
+        </h1>
+    </div>
+
+    <?php if (!$rmaCheck['allowed']): ?>
+        <div class="message message-error error">
+            <span><?php echo $rmaCheck['message']; ?></span>
+        </div>
+        <div class="actions-toolbar">
+            <div class="primary">
+                <a href="<?php echo $this->getUrl('sales/order/history'); ?>" class="action primary back">
+                    <span><?php echo __('Back to Orders'); ?></span>
+                </a>
+            </div>
+        </div>
+    <?php else: ?>
+
+    <div class="message message-info info">
+        <span><?php echo __('You can request RMA within %1 days of delivery.', $block->getRmaDaysLimit()); ?></span>
+    </div>
+
+    <form method="post" 
+          id="rma-generate-form" 
+          action="<?php echo $this->getUrl('rma/rma/save'); ?>" 
+          class="form rma-form"
+          enctype="multipart/form-data">
+        
+        <?php echo $block->getBlockHtml('formkey'); ?>
+        <input type="hidden" name="order_id" value="<?php echo $id; ?>">
+
+        <!-- RMA Type Selection -->
+        <div class="field required rma-type-selection">
+            <label class="label" for="rma_type">
+                <span><?php echo __('RMA Type'); ?></span>
+            </label>
+            <div class="control">
+                <select id="rma_type" name="rma_type" class="select" required data-validate="{required:true}">
+                    <option value=""><?php echo __('-- Please Select --'); ?></option>
+                    <option value="exchange"><?php echo __('Exchange'); ?></option>
+                    <option value="return"><?php echo __('Return'); ?></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data table table-order-items" id="rma-items-table">
+                <thead>
+                    <tr>
+                        <th class="col select"><?php echo __('Select'); ?></th>
+                        <th class="col image"><?php echo __('Product'); ?></th>
+                        <th class="col name"><?php echo __('Product Name'); ?></th>
+                        <th class="col qty"><?php echo __('Available Qty'); ?></th>
+                        <th class="col qty-return"><?php echo __('Return Qty'); ?></th>
+                        <th class="col reason"><?php echo __('Reason'); ?></th>
+                        <th class="col condition"><?php echo __('Condition'); ?></th>
+                        <th class="col images"><?php echo __('Images (1-3)'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if(!empty($orderData)): ?>
+                    <?php foreach($orderData as $item): ?>
+                        <?php 
+                        $rmaAvailable = $block->checkRmaAvailable($item['id']);
+                        $isDisabled = ($rmaAvailable->getSize() > 0) ? 'disabled' : '';
+                        $checkboxClass = ($rmaAvailable->getSize() > 0) ? 'checkbox-disabled' : '';
+                        ?>
+                        <tr class="item-row <?php echo $checkboxClass; ?>">
+                            <td class="col select">
+                                <input type="checkbox" 
+                                       name="check[<?php echo $item['id']; ?>]" 
+                                       class="item-checkbox" 
+                                       <?php echo $isDisabled; ?> 
+                                       data-item-id="<?php echo $item['id']; ?>">
+                                <input type="hidden" 
+                                       name="item_id[<?php echo $item['id']; ?>]" 
+                                       value="<?php echo $item['id']; ?>">
+                            </td>
+                            
+                            <td class="col image">
+                                <img src="<?php echo $item['img_url']; ?>" 
+                                     alt="<?php echo $block->escapeHtml($item['name']); ?>" 
+                                     width="75">
+                            </td>
+                            
+                            <td class="col name">
+                                <?php echo $block->escapeHtml($item['name']); ?>
+                                <?php if(isset($item['options'])): ?>
+                                    <div class="item-options">
+                                        <?php foreach($item['options'] as $option): ?>
+                                            <div>
+                                                <strong><?php echo $block->escapeHtml($option['attribute']['label']); ?>:</strong>
+                                                <?php echo $block->escapeHtml($option['value']['label']); ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            
+                            <td class="col qty"><?php echo (int)$item['qty']; ?></td>
+                            
+                            <td class="col qty-return">
+                                <input type="number" 
+                                       name="qty_return[<?php echo $item['id']; ?>]" 
+                                       class="input-text qty-input" 
+                                       min="1" 
+                                       max="<?php echo (int)$item['qty']; ?>"
+                                       <?php echo $isDisabled; ?>>
+                            </td>
+                            
+                            <td class="col reason">
+                                <select name="reason[<?php echo $item['id']; ?>]" 
+                                        class="select reason-select" 
+                                        data-item-id="<?php echo $item['id']; ?>"
+                                        <?php echo $isDisabled; ?>>
+                                    <option value=""><?php echo __('-- Select Reason --'); ?></option>
+                                    <option value="" disabled class="reason-placeholder-exchange" style="display:none;">
+                                        <?php echo __('-- Select Exchange Reasons --'); ?>
+                                    </option>
+                                    <option value="" disabled class="reason-placeholder-return" style="display:none;">
+                                        <?php echo __('-- Select Return Reasons --'); ?>
+                                    </option>
+                                </select>
+                                <div class="reason-other-container" style="display:none; margin-top:10px;">
+                                    <textarea name="reason_other_text[<?php echo $item['id']; ?>]" 
+                                              class="reason-other-text"
+                                              rows="3"
+                                              placeholder="<?php echo __('Please specify the reason...'); ?>"></textarea>
+                                </div>
+                            </td>
+                            
+                            <td class="col condition">
+                                <select name="condition[<?php echo $item['id']; ?>]" 
+                                        class="select condition-select" 
+                                        data-item-id="<?php echo $item['id']; ?>"
+                                        <?php echo $isDisabled; ?>>
+                                    <option value=""><?php echo __('-- Select Condition --'); ?></option>
+                                    <option value="" disabled class="condition-placeholder-exchange" style="display:none;">
+                                        <?php echo __('-- Select Exchange Conditions --'); ?>
+                                    </option>
+                                    <option value="" disabled class="condition-placeholder-return" style="display:none;">
+                                        <?php echo __('-- Select Return Conditions --'); ?>
+                                    </option>
+                                </select>
+                                <div class="condition-other-container" style="display:none; margin-top:10px;">
+                                    <textarea name="condition_other_text[<?php echo $item['id']; ?>]" 
+                                              class="condition-other-text"
+                                              rows="3"
+                                              placeholder="<?php echo __('Please specify the condition...'); ?>"></textarea>
+                                </div>
+                            </td>
+                            
+                            <td class="col images">
+                                <div class="image-upload-container" data-item-id="<?php echo $item['id']; ?>">
+                                    <div class="upload-button-wrapper">
+                                        <button type="button" class="action primary upload-trigger" <?php echo $isDisabled; ?>>
+                                            <span><?php echo __('Upload Images'); ?></span>
+                                        </button>
+                                        <input type="file" 
+                                               class="image-upload-input" 
+                                               accept="image/jpeg,image/png,image/gif"
+                                               multiple
+                                               style="display:none;"
+                                               <?php echo $isDisabled; ?>>
+                                    </div>
+                                    <div class="uploaded-images-preview"></div>
+                                    <div class="upload-info">
+                                        <?php echo __('Min: 1 image, Max: 3 images'); ?><br>
+                                        <?php echo __('Max size: 5MB per image'); ?>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <?php if($rmaAvailable->getSize() > 0): ?>
+                        <tr class="item-rma-status">
+                            <td colspan="8">
+                                <div class="message message-notice notice">
+                                    <span><?php echo __('RMA already requested for this item.'); ?></span>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="8" class="no-items">
+                            <div class="message message-info">
+                                <?php echo __('No items available for RMA.'); ?>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="actions-toolbar">
+            <div class="primary">
+                <button type="submit" class="action submit primary" title="<?php echo __('Submit RMA Request'); ?>">
+                    <span><?php echo __('Submit RMA Request'); ?></span>
+                </button>
+            </div>
+            <div class="secondary">
+                <a href="<?php echo $this->getUrl('sales/order/history'); ?>" class="action back">
+                    <span><?php echo __('Back to Orders'); ?></span>
+                </a>
+            </div>
+        </div>
+    </form>
+    <?php endif; ?>
+</div>
+
+<style>
+.rma-generate-container {
+    margin: 20px 0;
+}
+
+.rma-type-selection {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.rma-type-selection .control {
+    max-width: 300px;
+}
+
+.table-order-items {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-order-items th,
+.table-order-items td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    vertical-align: top;
+}
+
+.table-order-items th {
+    background: #f5f5f5;
+    font-weight: 600;
+    text-align: left;
+}
+
+.checkbox-disabled {
+    opacity: 0.5;
+    background: #f9f9f9;
+}
+
+.item-options {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.qty-input {
+    width: 80px;
+    padding: 5px;
+}
+
+.reason-select,
+.condition-select {
+    width: 100%;
+    padding: 5px;
+}
+
+.reason-other-container,
+.condition-other-container {
+    margin-top: 10px;
+}
+
+.reason-other-text,
+.condition-other-text {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+.image-upload-container {
+    min-width: 200px;
+}
+
+.upload-button-wrapper {
+    margin-bottom: 10px;
+}
+
+.uploaded-images-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.image-preview-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-preview-item .remove-image {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.upload-info {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.actions-toolbar {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+}
+</style>
+
+<script type="text/x-magento-init">
+{
+    "#rma-generate-form": {
+        "Magento_Ui/js/core/app": {
+            "components": {
+                "rmaForm": {
+                    "component": "Krishaweb_Rma/js/rma-form"
+                }
+            }
+        }
+    }
+}
+</script>
+
+<script>
+require([
+    'jquery',
+    'mage/validation'
+], function($) {
+    'use strict';
+
+    var uploadedImages = {};
+    var rmaType = '';
+
+    // RMA Type change handler
+    $('#rma_type').on('change', function() {
+        rmaType = $(this).val();
+        loadReasonsAndConditions(rmaType);
+    });
+
+    // Load reasons and conditions based on RMA type
+    function loadReasonsAndConditions(type) {
+        if (!type) return;
+
+        $.ajax({
+            url: '<?php echo $this->getUrl('rma/rma/getOptions'); ?>',
+            type: 'POST',
+            data: { rma_type: type },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    updateReasonSelects(response.reasons, type);
+                    updateConditionSelects(response.conditions, type);
+                }
+            }
+        });
+    }
+
+    function updateReasonSelects(reasons, type) {
+        $('.reason-select').each(function() {
+            var $select = $(this);
+            var currentValue = $select.val();
+            
+            // Clear options except first
+            $select.find('option:not(:first)').remove();
+            
+            // Add placeholder
+            var placeholderClass = type === 'exchange' ? 'reason-placeholder-exchange' : 'reason-placeholder-return';
+            $select.find('.' + placeholderClass).show();
+            
+            // Add options
+            $.each(reasons, function(index, reason) {
+                $select.append($('<option></option>')
+                    .attr('value', reason.title)
+                    .text(reason.title));
+            });
+
+            // Add "Other" option
+            $select.append($('<option></option>')
+                .attr('value', 'Other')
+                .text('<?php echo __('Other (Please Specify)'); ?>'));
+        });
+    }
+
+    function updateConditionSelects(conditions, type) {
+        $('.condition-select').each(function() {
+            var $select = $(this);
+            
+            // Clear options except first
+            $select.find('option:not(:first)').remove();
+            
+            // Add placeholder
+            var placeholderClass = type === 'exchange' ? 'condition-placeholder-exchange' : 'condition-placeholder-return';
+            $select.find('.' + placeholderClass).show();
+            
+            // Add options
+            $.each(conditions, function(index, condition) {
+                $select.append($('<option></option>')
+                    .attr('value', condition.title)
+                    .text(condition.title));
+            });
+
+            // Add "Other" option
+            $select.append($('<option></option>')
+                .attr('value', 'Other')
+                .text('<?php echo __('Other (Please Specify)'); ?>'));
+        });
+    }
+
+    // Handle reason "Other" selection
+    $(document).on('change', '.reason-select', function() {
+        var $select = $(this);
+        var itemId = $select.data('item-id');
+        var $otherContainer = $select.closest('td').find('.reason-other-container');
+        
+        if ($select.val() === 'Other') {
+            $otherContainer.show();
+            $otherContainer.find('textarea').prop('required', true);
+        } else {
+            $otherContainer.hide();
+            $otherContainer.find('textarea').prop('required', false).val('');
+        }
+    });
+
+    // Handle condition "Other" selection
+    $(document).on('change', '.condition-select', function() {
+        var $select = $(this);
+        var itemId = $select.data('item-id');
+        var $otherContainer = $select.closest('td').find('.condition-other-container');
+        
+        if ($select.val() === 'Other') {
+            $otherContainer.show();
+            $otherContainer.find('textarea').prop('required', true);
+        } else {
+            $otherContainer.hide();
+            $otherContainer.find('textarea').prop('required', false).val('');
+        }
+    });
+
+    // Image upload trigger
+    $(document).on('click', '.upload-trigger', function() {
+        $(this).closest('.image-upload-container').find('.image-upload-input').click();
+    });
+
+    // Handle image selection
+    $(document).on('change', '.image-upload-input', function(e) {
+        var files = e.target.files;
+        var $container = $(this).closest('.image-upload-container');
+        var itemId = $container.data('item-id');
+        
+        if (!uploadedImages[itemId]) {
+            uploadedImages[itemId] = [];
+        }
+
+        // Check if adding these files exceeds limit
+        if (uploadedImages[itemId].length + files.length > 3) {
+            alert('<?php echo __('You can upload maximum 3 images per item.'); ?>');
+            return;
+        }
+
+        // Upload each file
+        for (var i = 0; i < files.length; i++) {
+            if (uploadedImages[itemId].length >= 3) {
+                break;
+            }
+            uploadImage(files[i], itemId, $container);
+        }
+
+        // Clear input
+        $(this).val('');
+    });
+
+    function uploadImage(file, itemId, $container) {
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('<?php echo __('File size exceeds 5MB: '); ?>' + file.name);
+            return;
+        }
+
+        // Validate file type
+        if (!file.type.match('image/(jpeg|png|gif)')) {
+            alert('<?php echo __('Invalid file type. Only JPG, PNG and GIF are allowed: '); ?>' + file.name);
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('rma_image', file);
+        formData.append('form_key', '<?php echo $block->getFormKey(); ?>');
+
+        $.ajax({
+            url: '<?php echo $this->getUrl('rma/rma/upload'); ?>',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            beforeSend: function() {
+                $container.find('.upload-trigger').prop('disabled', true).text('<?php echo __('Uploading...'); ?>');
+            },
+            success: function(response) {
+                if (response.error) {
+                    alert(response.message);
+                } else {
+                    uploadedImages[itemId].push(response.path);
+                    addImagePreview($container, response.url, response.path, itemId);
+                }
+            },
+            error: function() {
+                alert('<?php echo __('An error occurred while uploading the image.'); ?>');
+            },
+            complete: function() {
+                $container.find('.upload-trigger').prop('disabled', false).text('<?php echo __('Upload Images'); ?>');
+            }
+        });
+    }
+
+    function addImagePreview($container, url, path, itemId) {
+        var $preview = $('<div class="image-preview-item"></div>');
+        var $img = $('<img>').attr('src', url);
+        var $removeBtn = $('<button type="button" class="remove-image">×</button>');
+        
+        $removeBtn.on('click', function() {
+            removeImage(itemId, path);
+            $preview.remove();
+        });
+
+        $preview.append($img).append($removeBtn);
+        $container.find('.uploaded-images-preview').append($preview);
+
+        // Add hidden input for this image
+        var $hiddenInput = $('<input type="hidden">');
+        $hiddenInput.attr('name', 'images[' + itemId + '][]');
+        $hiddenInput.attr('value', path);
+        $hiddenInput.attr('data-image-path', path);
+        $container.append($hiddenInput);
+    }
+
+    function removeImage(itemId, path) {
+        var index = uploadedImages[itemId].indexOf(path);
+        if (index > -1) {
+            uploadedImages[itemId].splice(index, 1);
+        }
+
+        // Remove hidden input
+        $('input[data-image-path="' + path + '"]').remove();
+    }
+
+    // Form validation
+    $('#rma-generate-form').mage('validation', {
+        errorPlacement: function(error, element) {
+            error.insertAfter(element.closest('.control, td'));
+        }
+    });
+
+    // Custom validation before submit
+    $('#rma-generate-form').on('submit', function(e) {
+        var hasCheckedItem = false;
+        var isValid = true;
+
+        $('.item-checkbox:checked').each(function() {
+            hasCheckedItem = true;
+            var itemId = $(this).data('item-id');
+            var $row = $(this).closest('tr');
+
+            // Check if images are uploaded (minimum 1)
+            if (!uploadedImages[itemId] || uploadedImages[itemId].length < 1) {
+                alert('<?php echo __('Please upload at least 1 image for the selected item.'); ?>');
+                isValid = false;
+                return false;
+            }
+
+            // Check quantity
+            var qty = $row.find('.qty-input').val();
+            if (!qty || qty < 1) {
+                alert('<?php echo __('Please enter a valid quantity for the selected item.'); ?>');
+                isValid = false;
+                return false;
+            }
+
+            // Check reason
+            var reason = $row.find('.reason-select').val();
+            if (!reason) {
+                alert('<?php echo __('Please select a reason for the selected item.'); ?>');
+                isValid = false;
+                return false;
+            }
+
+            // Check "Other" reason text
+            if (reason === 'Other') {
+                var reasonText = $row.find('.reason-other-text').val().trim();
+                if (!reasonText) {
+                    alert('<?php echo __('Please specify the reason when selecting "Other".'); ?>');
+                    isValid = false;
+                    return false;
+                }
+            }
+
+            // Check condition
+            var condition = $row.find('.condition-select').val();
+            if (!condition) {
+                alert('<?php echo __('Please select a condition for the selected item.'); ?>');
+                isValid = false;
+                return false;
+            }
+
+            // Check "Other" condition text
+            if (condition === 'Other') {
+                var conditionText = $row.find('.condition-other-text').val().trim();
+                if (!conditionText) {
+                    alert('<?php echo __('Please specify the condition when selecting "Other".'); ?>');
+                    isValid = false;
+                    return false;
+                }
+            }
+        });
+
+        if (!hasCheckedItem) {
+            alert('<?php echo __('Please select at least one item.'); ?>');
+            return false;
+        }
+
+        if (!rmaType) {
+            alert('<?php echo __('Please select RMA Type (Exchange or Return).'); ?>');
+            return false;
+        }
+
+        return isValid;
+    });
+});
+</script>

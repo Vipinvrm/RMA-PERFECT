@@ -1,0 +1,854 @@
+<?php
+/**
+ * Admin RMA View Template
+ * Location: view/adminhtml/templates/rma/show.phtml
+ */
+$id = $this->getRequest()->getParam('id');
+$orderData = $this->getOrderData($id);
+$reasons = $this->getReasons();
+$conditions = $this->getConditions();
+$status = $this->getStatus();
+$rmaOrderObj = $this->getRmaOrder($id);
+?>
+
+<style>
+/* Modern Admin RMA Styles */
+.item-rma-req {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.item-rma-req .fieldset {
+    border: none;
+    padding: 0;
+}
+
+.item-rma-req .legend {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.admin__control-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.admin__control-table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px;
+    font-weight: 600;
+    text-align: left;
+    border: none;
+}
+
+.admin__control-table thead th:first-child {
+    border-radius: 8px 0 0 0;
+}
+
+.admin__control-table thead th:last-child {
+    border-radius: 0 8px 0 0;
+}
+
+.admin__control-table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.admin__control-table tbody tr:hover {
+    background: #f8f9ff;
+}
+
+.admin__control-table tbody td {
+    padding: 15px 12px;
+    vertical-align: top;
+}
+
+/* Image Gallery Styles */
+.rma-images-gallery {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.image-link {
+    position: relative;
+    display: block;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.image-link:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.image-link img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.image-link:hover img {
+    border-color: #667eea;
+}
+
+/* Other Text Display */
+.other-text-display {
+    margin-top: 8px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-left: 3px solid #1979c3;
+    font-style: italic;
+    color: #555;
+    border-radius: 4px;
+}
+
+/* Image Modal */
+#imageModal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.95);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 40px;
+    color: #f1f1f1;
+    font-size: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 10001;
+}
+
+.modal-close:hover {
+    color: #667eea;
+    transform: scale(1.1);
+}
+
+#modalImage {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 90%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+/* Status Form */
+.status-form-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.admin__field {
+    margin-bottom: 20px;
+}
+
+.admin__field-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.admin__control-select,
+.admin__control-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.admin__control-select:focus,
+.admin__control-textarea:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.action.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* No Images Message */
+.no-images-message {
+    color: #999;
+    font-style: italic;
+    font-size: 14px;
+}
+</style>
+
+<div class="block item-rma-req">
+    <fieldset class="fieldset admin__fieldset" id="item_fieldset">
+        <legend class="admin__legend legend">
+            <span><?php echo __('Items RMA Requested for');?></span>
+        </legend>
+        <br>
+        <div class="block-content">
+            <div class="table-wrapper">
+                <table class="admin__control-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="col"><?php echo __('Product Name');?></th>
+                            <th scope="col" class="col"><?php echo __('SKU');?></th>
+                            <th scope="col" class="col"><?php echo __('Qty');?></th>
+                            <th scope="col" class="col"><?php echo __('Reason');?></th>
+                            <th scope="col" class="col"><?php echo __('Condition');?></th>
+                            <th scope="col" class="col"><?php echo __('Product Images');?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if(!empty($orderData)):?>
+                        <?php foreach($orderData as $orderItem):?>
+                            <tr>
+                                <td data-th="Product Name" class="col">
+                                    <strong><?php echo $block->escapeHtml($orderItem['name'])?></strong>
+                                </td>
+                                <td data-th="SKU" class="col">
+                                    <?php echo $block->escapeHtml($orderItem['sku'])?>
+                                </td>
+                                <td data-th="QTY" class="col">
+                                    <strong><?php echo (int)$orderItem['qty']?></strong>
+                                </td>
+                                <td data-th="Reason" class="col">
+                                    <div>
+                                        <strong style="color: #667eea;"><?php echo $block->escapeHtml($orderItem['reason'])?></strong>
+                                    </div>
+                                    <?php if(isset($orderItem['reason_other_text']) && !empty($orderItem['reason_other_text'])): ?>
+                                        <div class="other-text-display">
+                                            💬 <?php echo $block->escapeHtml($orderItem['reason_other_text']); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td data-th="Condition" class="col">
+                                    <div>
+                                        <strong style="color: #764ba2;"><?php echo $block->escapeHtml($orderItem['condition'])?></strong>
+                                    </div>
+                                    <?php if(isset($orderItem['condition_other_text']) && !empty($orderItem['condition_other_text'])): ?>
+                                        <div class="other-text-display">
+                                            💬 <?php echo $block->escapeHtml($orderItem['condition_other_text']); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td data-th="Images" class="col">
+                                    <?php if(isset($orderItem['images']) && !empty($orderItem['images'])): ?>
+                                        <?php 
+                                        $images = json_decode($orderItem['images'], true);
+                                        if(is_array($images) && count($images) > 0):
+                                        ?>
+                                            <div class="rma-images-gallery">
+                                                <?php foreach($images as $imagePath): ?>
+                                                    <?php 
+                                                    // Get the media URL
+                                                    $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+                                                    $storeManager = $objectManager->get('\Magento\Store\Model\StoreManagerInterface');
+                                                    $mediaUrl = $storeManager->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA);
+                                                    $imageUrl = $mediaUrl . $imagePath;
+                                                    ?>
+                                                    <a href="javascript:void(0);" 
+                                                       class="image-link"
+                                                       onclick="openImageModal('<?php echo $imageUrl; ?>')">
+                                                        <img src="<?php echo $imageUrl; ?>" 
+                                                             alt="Product Image"
+                                                             title="Click to view full size">
+                                                    </a>
+                                                <?php endforeach; ?>
+                                            </div>
+                                            <div style="margin-top: 8px; font-size: 12px; color: #999;">
+                                                <?php echo __('%1 image(s) uploaded', count($images)); ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="no-images-message">
+                                                <?php echo __('No images uploaded'); ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="no-images-message">
+                                            <?php echo __('No images uploaded'); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach;?>
+                    <?php else:?>
+                        <tr>
+                            <td colspan="6" class="col">
+                                <div class="message message-notice">
+                                    <?php echo __('No RMA items found for this order.');?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endif;?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="status-form-section">
+            <form method="post" 
+                  name="submit-return" 
+                  id="submit-return" 
+                  action="<?php echo $this->getUrl('rma/rma/save');?>"
+                  data-mage-init='{"validation":{}}'>
+                
+                <?php echo $block->getBlockHtml('formkey'); ?>
+                
+                <div class="admin__field field field required">
+                    <label class="label admin__field-label" for="adminstatus">
+                        <span><?php echo __('Update RMA Status');?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <input type="hidden" name="rma_id" value="<?php echo $id;?>">
+                        <select class="select admin__control-select" 
+                                id="adminstatus"
+                                name="adminstatus" 
+                                data-validate="{required:true}" 
+                                aria-required="true">
+                            <option value="">-- <?php echo __('Select a Status');?> --</option>
+                            <?php foreach($status as $state):?>
+                                <option <?php if($state->getStatusId() == $rmaOrderObj->getStatus()):?>selected="selected"<?php endif;?> 
+                                        value="<?php echo $block->escapeHtml($state->getStatusId());?>">
+                                    <?php echo $block->escapeHtml($state->getTitle());?>
+                                </option>
+                            <?php endforeach;?>
+                        </select>
+                    </div> 
+                </div>
+
+                <div class="admin__field field">
+                    <label class="label admin__field-label" for="comment">
+                        <span><?php echo __('Status Comment (Optional)');?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <textarea class="admin__control-textarea" 
+                                  id="comment"
+                                  name="comment" 
+                                  rows="4"
+                                  placeholder="<?php echo __('Add a comment about this status change (optional)');?>"></textarea>
+                    </div>
+                </div>
+                
+                <button type="submit" class="action primary" title="<?php echo __('Update Status');?>">
+                    <span><?php echo __('Update Status');?></span>
+                </button>
+            </form>
+        </div>
+    </fieldset>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal">
+    <span class="modal-close" onclick="closeImageModal()">&times;</span>
+    <img id="modalImage">
+</div>
+
+<script>
+function openImageModal(imageUrl) {
+    document.getElementById('imageModal').style.display = 'block';
+    document.getElementById('modalImage').src = imageUrl;
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Restore scrolling
+}
+
+// Close modal on outside click
+document.getElementById('imageModal').onclick = function(event) {
+    if (event.target == this) {
+        closeImageModal();
+    }
+}
+
+// Close modal on ESC key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeImageModal();
+    }
+});
+</script>
+
+<!-- Pickup sections remain unchanged from original template -->
+<!-- ... Include all pickup sections here ... -->
+
+<!-- Rest of the template remains the same (pickup sections, etc.) -->
+<!-- ... (Include all the pickup sections from the original template) ... -->
+<!-- Customer Submitted Pickup Information -->
+<?php if($rmaOrderObj->getCustomerPickupSubmitted()): ?>
+<div class="block customer-pickup-info" style="margin-top: 30px;">
+    <fieldset class="fieldset admin__fieldset" id="customer_pickup_fieldset">
+        <legend class="admin__legend legend">
+            <span><?php echo __('Customer Submitted Pickup Details'); ?></span>
+        </legend>
+        <br>
+        
+        <div class="block-content customer-pickup-details" style="background: #e8f5e9; padding: 20px; border-radius: 4px; border-left: 4px solid #4caf50; margin-bottom: 20px;">
+            <div class="admin__field-row">
+                <div class="admin__field" style="margin-bottom: 15px;">
+                    <label class="admin__field-label" style="font-weight: 600;  width: 200px;">
+                        <?php echo __('Submission Status:'); ?>
+                    </label>
+                    <span class="admin__field-value" style="color: #4caf50; font-weight: 600;">
+                        ✓ <?php echo __('Customer Submitted Pickup Details'); ?>
+                    </span>
+                </div>
+
+                <div class="admin__field" style="margin-bottom: 15px;">
+                    <label class="admin__field-label" style="font-weight: 600;  width: 200px;">
+                        <?php echo __('Submitted At:'); ?>
+                    </label>
+                    <span class="admin__field-value">
+                        <?php echo $this->formatDate($rmaOrderObj->getPickupRequestSubmittedAt(), \IntlDateFormatter::MEDIUM); ?>
+                        <?php echo $this->formatTime($rmaOrderObj->getPickupRequestSubmittedAt(), \IntlDateFormatter::SHORT); ?>
+                    </span>
+                </div>
+
+                <div style="width: 100%; height: 1px; background: #c8e6c9; margin: 20px 0;"></div>
+
+                <div class="admin__field" style="margin-bottom: 15px;">
+                    <label class="admin__field-label" style="font-weight: 600;  width: 200px;">
+                        <?php echo __('Preferred Pickup Date:'); ?>
+                    </label>
+                    <span class="admin__field-value" style="font-size: 15px; color: #2e7d32; font-weight: 600;">
+                        <?php echo $this->formatDate($rmaOrderObj->getCustomerPickupDate(), \IntlDateFormatter::LONG); ?>
+                    </span>
+                </div>
+
+                <div class="admin__field" style="margin-bottom: 15px;">
+                    <label class="admin__field-label" style="font-weight: 600;  width: 200px;">
+                        <?php echo __('Preferred Time Slot:'); ?>
+                    </label>
+                    <span class="admin__field-value" style="font-size: 15px; color: #2e7d32; font-weight: 600;">
+                        <?php echo $block->escapeHtml($rmaOrderObj->getCustomerPickupTimeSlot()); ?>
+                    </span>
+                </div>
+
+                <div style="width: 100%; height: 1px; background: #c8e6c9; margin: 20px 0;"></div>
+
+                <div class="admin__field" style="margin-bottom: 15px;">
+                    <label class="admin__field-label" style="font-weight: 600;  width: 200px;">
+                        <?php echo __('Contact Name:'); ?>
+                    </label>
+                    <span class="admin__field-value">
+                        <?php echo $block->escapeHtml($rmaOrderObj->getCustomerPickupContactName()); ?>
+                    </span>
+                </div>
+
+                <div class="admin__field" style="margin-bottom: 15px;">
+                    <label class="admin__field-label" style="font-weight: 600;  width: 200px;">
+                        <?php echo __('Contact Phone:'); ?>
+                    </label>
+                    <span class="admin__field-value">
+                        <a href="tel:<?php echo $block->escapeHtml($rmaOrderObj->getCustomerPickupContactPhone()); ?>" 
+                           style="color: #1979c3; text-decoration: none; font-weight: 600;">
+                            📞 <?php echo $block->escapeHtml($rmaOrderObj->getCustomerPickupContactPhone()); ?>
+                        </a>
+                    </span>
+                </div>
+
+                <div class="admin__field" style="margin-bottom: 15px;">
+                    <label class="admin__field-label" style="font-weight: 600;  width: 200px; vertical-align: top;">
+                        <?php echo __('Pickup Address:'); ?>
+                    </label>
+                    <span class="admin__field-value" style=" max-width: 600px; background: white; padding: 10px; border-radius: 4px; line-height: 1.6;">
+                        <?php echo nl2br($block->escapeHtml($rmaOrderObj->getCustomerPickupAddress())); ?>
+                    </span>
+                </div>
+
+                <?php if($rmaOrderObj->getCustomerPickupInstructions()): ?>
+                    <div class="admin__field" style="margin-bottom: 15px;">
+                        <label class="admin__field-label" style="font-weight: 600;  width: 200px; vertical-align: top;">
+                            <?php echo __('Special Instructions:'); ?>
+                        </label>
+                        <span class="admin__field-value" style=" max-width: 600px; font-style: italic; color: #666; background: #fff9e6; padding: 10px; border-radius: 4px; border-left: 3px solid #ffc107;">
+                            💡 <?php echo nl2br($block->escapeHtml($rmaOrderObj->getCustomerPickupInstructions())); ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="message message-notice" style="margin-top: 20px; padding: 15px; background: white; border-left: 4px solid #1979c3; border-radius: 4px;">
+                <strong style="color: #1979c3;">⚠️ <?php echo __('Action Required:'); ?></strong>
+                <p style="margin: 5px 0 0 30px; color: #333;">
+                    <?php echo __('Please schedule the pickup using the form below. You can use the customer\'s preferred date and time or select a different schedule based on availability.'); ?>
+                </p>
+            </div>
+
+            <?php if(!$rmaOrderObj->getPickupScheduled()): ?>
+            <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                <strong style="color: #856404;">⏰ <?php echo __('Pending Action:'); ?></strong>
+                <span style="color: #856404;"> <?php echo __('Pickup not yet scheduled by admin'); ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Quick Action Buttons -->
+        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+            <button type="button" 
+                    class="action secondary" 
+                    onclick="autoFillPickupDetails()"
+                    style="padding: 10px 20px;">
+                <span>📋 <?php echo __('Use Customer Preferences'); ?></span>
+            </button>
+            <button type="button" 
+                    class="action secondary" 
+                    onclick="window.print()"
+                    style="padding: 10px 20px;">
+                <span>🖨️ <?php echo __('Print Details'); ?></span>
+            </button>
+        </div>
+    </fieldset>
+</div>
+
+<script type="text/javascript">
+function autoFillPickupDetails() {
+    // Auto-fill the admin pickup form with customer's preferences
+    document.getElementById('pickup_date').value = '<?php echo $rmaOrderObj->getCustomerPickupDate(); ?>';
+    document.getElementById('pickup_time_slot').value = '<?php echo $block->escapeJs($rmaOrderObj->getCustomerPickupTimeSlot()); ?>';
+    document.getElementById('pickup_contact_name').value = '<?php echo $block->escapeJs($rmaOrderObj->getCustomerPickupContactName()); ?>';
+    document.getElementById('pickup_contact_phone').value = '<?php echo $block->escapeJs($rmaOrderObj->getCustomerPickupContactPhone()); ?>';
+    document.getElementById('pickup_address').value = '<?php echo $block->escapeJs($rmaOrderObj->getCustomerPickupAddress()); ?>';
+    
+    <?php if($rmaOrderObj->getCustomerPickupInstructions()): ?>
+    document.getElementById('pickup_instructions').value = '<?php echo $block->escapeJs($rmaOrderObj->getCustomerPickupInstructions()); ?>';
+    <?php endif; ?>
+    
+    // Scroll to the pickup form
+    document.getElementById('pickup_fieldset').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Show success message
+    var messageDiv = document.createElement('div');
+    messageDiv.className = 'message message-success';
+    messageDiv.style.cssText = 'margin: 15px 0; padding: 12px; background: #d4edda; border-left: 4px solid #4caf50; border-radius: 4px;';
+    messageDiv.innerHTML = '<strong style="color: #155724;">✓ Customer preferences auto-filled!</strong> <span style="color: #155724;">Review and modify if needed, then submit.</span>';
+    
+    var formContainer = document.getElementById('pickup-form-container');
+    if (formContainer) {
+        formContainer.insertBefore(messageDiv, formContainer.firstChild);
+        setTimeout(function() {
+            messageDiv.style.transition = 'opacity 0.5s';
+            messageDiv.style.opacity = '0';
+            setTimeout(function() { messageDiv.remove(); }, 500);
+        }, 5000);
+    }
+}
+</script>
+<?php endif; ?>
+
+<!-- Pickup Information Section -->
+<div class="block item-pickup-info" style="margin-top: 30px;">
+    <fieldset class="fieldset admin__fieldset" id="pickup_fieldset">
+        <legend class="admin__legend legend">
+            <span><?php echo __('Admin Pickup Scheduling'); ?></span>
+        </legend>
+        <br>
+        
+        <?php if($rmaOrderObj->getPickupScheduled()): ?>
+            <!-- Display Existing Pickup Information -->
+            <div class="block-content pickup-details" style="background: #f5f5f5; padding: 20px; border-radius: 4px; margin-bottom: 20px;">
+                <div class="admin__field-row">
+                    <div class="admin__field" style="margin-bottom: 15px;">
+                        <label class="admin__field-label" style="font-weight: 600;  width: 180px;">
+                            <?php echo __('Pickup Status:'); ?>
+                        </label>
+                        <span class="admin__field-value" style="color: #4caf50; font-weight: 600;">
+                            <?php echo __('Scheduled'); ?>
+                        </span>
+                    </div>
+
+                    <?php if($rmaOrderObj->getPickupDate()): ?>
+                        <div class="admin__field" style="margin-bottom: 15px;">
+                            <label class="admin__field-label" style="font-weight: 600;  width: 180px;">
+                                <?php echo __('Pickup Date:'); ?>
+                            </label>
+                            <span class="admin__field-value">
+                                <?php echo $this->formatDate($rmaOrderObj->getPickupDate(), \IntlDateFormatter::MEDIUM); ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($rmaOrderObj->getPickupTimeSlot()): ?>
+                        <div class="admin__field" style="margin-bottom: 15px;">
+                            <label class="admin__field-label" style="font-weight: 600;  width: 180px;">
+                                <?php echo __('Time Slot:'); ?>
+                            </label>
+                            <span class="admin__field-value">
+                                <?php echo $block->escapeHtml($rmaOrderObj->getPickupTimeSlot()); ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($rmaOrderObj->getPickupContactName()): ?>
+                        <div class="admin__field" style="margin-bottom: 15px;">
+                            <label class="admin__field-label" style="font-weight: 600;  width: 180px;">
+                                <?php echo __('Contact Name:'); ?>
+                            </label>
+                            <span class="admin__field-value">
+                                <?php echo $block->escapeHtml($rmaOrderObj->getPickupContactName()); ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($rmaOrderObj->getPickupContactPhone()): ?>
+                        <div class="admin__field" style="margin-bottom: 15px;">
+                            <label class="admin__field-label" style="font-weight: 600;  width: 180px;">
+                                <?php echo __('Contact Phone:'); ?>
+                            </label>
+                            <span class="admin__field-value">
+                                <?php echo $block->escapeHtml($rmaOrderObj->getPickupContactPhone()); ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($rmaOrderObj->getPickupAddress()): ?>
+                        <div class="admin__field" style="margin-bottom: 15px;">
+                            <label class="admin__field-label" style="font-weight: 600;  width: 180px; vertical-align: top;">
+                                <?php echo __('Pickup Address:'); ?>
+                            </label>
+                            <span class="admin__field-value" style=" max-width: 500px;">
+                                <?php echo nl2br($block->escapeHtml($rmaOrderObj->getPickupAddress())); ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($rmaOrderObj->getCourierName()): ?>
+                        <div class="admin__field" style="margin-bottom: 15px;">
+                            <label class="admin__field-label" style="font-weight: 600;  width: 180px;">
+                                <?php echo __('Courier:'); ?>
+                            </label>
+                            <span class="admin__field-value">
+                                <?php echo $block->escapeHtml($rmaOrderObj->getCourierName()); ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($rmaOrderObj->getTrackingNumber()): ?>
+                        <div class="admin__field" style="margin-bottom: 15px;">
+                            <label class="admin__field-label" style="font-weight: 600;  width: 180px;">
+                                <?php echo __('Tracking Number:'); ?>
+                            </label>
+                            <span class="admin__field-value">
+                                <?php echo $block->escapeHtml($rmaOrderObj->getTrackingNumber()); ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($rmaOrderObj->getPickupInstructions()): ?>
+                        <div class="admin__field" style="margin-bottom: 15px;">
+                            <label class="admin__field-label" style="font-weight: 600;  width: 180px; vertical-align: top;">
+                                <?php echo __('Instructions:'); ?>
+                            </label>
+                            <span class="admin__field-value" style=" max-width: 500px;">
+                                <?php echo nl2br($block->escapeHtml($rmaOrderObj->getPickupInstructions())); ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                
+                <button type="button" class="action secondary" onclick="document.getElementById('pickup-form-container').style.display='block'; this.style.display='none';">
+                    <span><?php echo __('Update Pickup Information'); ?></span>
+                </button>
+            </div>
+        <?php endif; ?>
+
+        <!-- Pickup Form (Hidden if already scheduled) -->
+        <div id="pickup-form-container" style="<?php echo $rmaOrderObj->getPickupScheduled() ? 'display:none;' : ''; ?>">
+            <form method="post" 
+                  name="submit-pickup" 
+                  id="submit-pickup" 
+                  action="<?php echo $this->getUrl('rma/rma/savePickup');?>"
+                  data-mage-init='{"validation":{}}'>
+                
+                <?php echo $block->getBlockHtml('formkey'); ?>
+                <input type="hidden" name="rma_id" value="<?php echo $id;?>">
+
+                <div class="admin__field field field required">
+                    <label class="label admin__field-label" for="pickup_date">
+                        <span><?php echo __('Pickup Date'); ?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <input type="text" 
+                               class="admin__control-text" 
+                               id="pickup_date"
+                               name="pickup_date" 
+                               data-validate="{required:true}"
+                               value="<?php echo $block->escapeHtml($rmaOrderObj->getPickupDate()); ?>"
+                               placeholder="<?php echo __('Select pickup date'); ?>" />
+                    </div>
+                </div>
+
+                <div class="admin__field field field required">
+                    <label class="label admin__field-label" for="pickup_time_slot">
+                        <span><?php echo __('Time Slot'); ?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <select class="select admin__control-select" 
+                                id="pickup_time_slot"
+                                name="pickup_time_slot" 
+                                data-validate="{required:true}">
+                            <option value="">-- <?php echo __('Select Time Slot'); ?> --</option>
+                            <option value="9:00 AM - 12:00 PM" <?php echo ($rmaOrderObj->getPickupTimeSlot() == '9:00 AM - 12:00 PM') ? 'selected' : ''; ?>>9:00 AM - 12:00 PM</option>
+                            <option value="12:00 PM - 3:00 PM" <?php echo ($rmaOrderObj->getPickupTimeSlot() == '12:00 PM - 3:00 PM') ? 'selected' : ''; ?>>12:00 PM - 3:00 PM</option>
+                            <option value="3:00 PM - 6:00 PM" <?php echo ($rmaOrderObj->getPickupTimeSlot() == '3:00 PM - 6:00 PM') ? 'selected' : ''; ?>>3:00 PM - 6:00 PM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="admin__field field field required">
+                    <label class="label admin__field-label" for="pickup_contact_name">
+                        <span><?php echo __('Contact Name'); ?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <input type="text" 
+                               class="admin__control-text" 
+                               id="pickup_contact_name"
+                               name="pickup_contact_name" 
+                               data-validate="{required:true}"
+                               value="<?php echo $block->escapeHtml($rmaOrderObj->getPickupContactName()); ?>"
+                               placeholder="<?php echo __('Enter contact name'); ?>" />
+                    </div>
+                </div>
+
+                <div class="admin__field field field required">
+                    <label class="label admin__field-label" for="pickup_contact_phone">
+                        <span><?php echo __('Contact Phone'); ?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <input type="text" 
+                               class="admin__control-text" 
+                               id="pickup_contact_phone"
+                               name="pickup_contact_phone" 
+                               data-validate="{required:true}"
+                               value="<?php echo $block->escapeHtml($rmaOrderObj->getPickupContactPhone()); ?>"
+                               placeholder="<?php echo __('Enter contact phone'); ?>" />
+                    </div>
+                </div>
+
+                <div class="admin__field field field required">
+                    <label class="label admin__field-label" for="pickup_address">
+                        <span><?php echo __('Pickup Address'); ?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <textarea class="admin__control-textarea" 
+                                  id="pickup_address"
+                                  name="pickup_address" 
+                                  rows="4"
+                                  data-validate="{required:true}"
+                                  placeholder="<?php echo __('Enter complete pickup address'); ?>"><?php echo $block->escapeHtml($rmaOrderObj->getPickupAddress()); ?></textarea>
+                    </div>
+                </div>
+                <h2 style="color: #222;font-weight: 600;font-size: 20px;">Return Shipment Details</h2>
+                <div class="admin__field field">
+                    <label class="label admin__field-label" for="courier_name">
+                        <span><?php echo __('Courier Name'); ?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <input type="text" 
+                               class="admin__control-text" 
+                               id="courier_name"
+                               name="courier_name" 
+                               value="<?php echo $block->escapeHtml($rmaOrderObj->getCourierName()); ?>"
+                               placeholder="<?php echo __('Enter courier name (optional)'); ?>" />
+                    </div>
+                </div>
+
+                <div class="admin__field field">
+                    <label class="label admin__field-label" for="tracking_number">
+                        <span><?php echo __('Tracking Number'); ?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <input type="text" 
+                               class="admin__control-text" 
+                               id="tracking_number"
+                               name="tracking_number" 
+                               value="<?php echo $block->escapeHtml($rmaOrderObj->getTrackingNumber()); ?>"
+                               placeholder="<?php echo __('Enter tracking number (optional)'); ?>" />
+                    </div>
+                </div>
+
+                <div class="admin__field field">
+                    <label class="label admin__field-label" for="pickup_instructions">
+                        <span><?php echo __('Pickup Instructions'); ?></span>
+                    </label>
+                    <div class="admin__field-control control">
+                        <textarea class="admin__control-textarea" 
+                                  id="pickup_instructions"
+                                  name="pickup_instructions" 
+                                  rows="3"
+                                  placeholder="<?php echo __('Any special instructions for pickup (optional)'); ?>"><?php echo $block->escapeHtml($rmaOrderObj->getPickupInstructions()); ?></textarea>
+                    </div>
+                </div>
+                
+                <button type="submit" class="action primary" title="<?php echo __('Schedule Pickup');?>">
+                    <span><?php echo __('Schedule Pickup');?></span>
+                </button>
+
+                <?php if($rmaOrderObj->getPickupScheduled()): ?>
+                    <button type="button" class="action secondary" onclick="document.getElementById('pickup-form-container').style.display='none'; this.parentElement.previousElementSibling.querySelector('button').style.display='inline-block';">
+                        <span><?php echo __('Cancel'); ?></span>
+                    </button>
+                <?php endif; ?>
+            </form>
+        </div>
+    </fieldset>
+</div>
+
+<script type="text/javascript">
+require([
+    'jquery',
+    'mage/calendar'
+], function($) {
+    $('#pickup_date').calendar({
+        dateFormat: 'yy-mm-dd',
+        minDate: 0,
+        showButtonPanel: true,
+        changeMonth: true,
+        changeYear: true
+    });
+});
+</script>

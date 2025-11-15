@@ -1,0 +1,302 @@
+<?php
+$rmaOrders = $block->getRmaOrders();
+?>
+
+<div class="rma-history-container">
+    <h1><?php echo __('My Returns & Exchanges'); ?></h1>
+    
+    <?php if (count($rmaOrders) > 0): ?>
+        <?php foreach ($rmaOrders as $rmaOrder): ?>
+            <?php 
+                $order = $block->getOrder($rmaOrder->getOrderId());
+                $currentStatus = $block->getCurrentStatus($rmaOrder->getRmaOrderId());
+                $canSubmitPickup = $block->canSubmitPickup($rmaOrder);
+                $isPickupScheduled = $block->isPickupScheduled($rmaOrder);
+            ?>
+            
+            <div class="rma-order-card">
+                <div class="rma-order-header">
+                    <div class="rma-order-info">
+                        <h3><?php echo __('RMA #%1', $rmaOrder->getRmaOrderId()); ?></h3>
+                        <p class="order-number">
+                            <?php echo __('Order #%1', $order->getIncrementId()); ?>
+                        </p>
+                        <p class="rma-type">
+                            <strong><?php echo __('Type:'); ?></strong> 
+                            <?php echo ucfirst($rmaOrder->getRmaType()); ?>
+                        </p>
+                        <p class="rma-date">
+                            <strong><?php echo __('Requested on:'); ?></strong> 
+                            <?php echo $block->formatDate($rmaOrder->getCreatedAt(), \IntlDateFormatter::MEDIUM); ?>
+                        </p>
+                    </div>
+                    <div class="rma-status-badge">
+                        <span class="status-label <?php echo strtolower(str_replace(' ', '-', $currentStatus)); ?>">
+                            <?php echo $block->escapeHtml($currentStatus); ?>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Customer Pickup Information Display -->
+                <?php if ($rmaOrder->getCustomerPickupSubmitted()): ?>
+                    <div class="pickup-info-display">
+                        <h4><?php echo __('Your Pickup Details'); ?></h4>
+                        <div class="pickup-details-grid">
+                            <div class="pickup-detail">
+                                <span class="label"><?php echo __('Pickup Date:'); ?></span>
+                                <span class="value"><?php echo $block->formatDate($rmaOrder->getCustomerPickupDate(), \IntlDateFormatter::MEDIUM); ?></span>
+                            </div>
+                            <div class="pickup-detail">
+                                <span class="label"><?php echo __('Time Slot:'); ?></span>
+                                <span class="value"><?php echo $block->escapeHtml($rmaOrder->getCustomerPickupTimeSlot()); ?></span>
+                            </div>
+                            <div class="pickup-detail">
+                                <span class="label"><?php echo __('Contact Name:'); ?></span>
+                                <span class="value"><?php echo $block->escapeHtml($rmaOrder->getCustomerPickupContactName()); ?></span>
+                            </div>
+                            <div class="pickup-detail">
+                                <span class="label"><?php echo __('Contact Phone:'); ?></span>
+                                <span class="value"><?php echo $block->escapeHtml($rmaOrder->getCustomerPickupContactPhone()); ?></span>
+                            </div>
+                            <div class="pickup-detail full-width">
+                                <span class="label"><?php echo __('Address:'); ?></span>
+                                <span class="value"><?php echo nl2br($block->escapeHtml($rmaOrder->getCustomerPickupAddress())); ?></span>
+                            </div>
+                            <?php if ($rmaOrder->getCustomerPickupInstructions()): ?>
+                                <div class="pickup-detail full-width">
+                                    <span class="label"><?php echo __('Instructions:'); ?></span>
+                                    <span class="value"><?php echo nl2br($block->escapeHtml($rmaOrder->getCustomerPickupInstructions())); ?></span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- Admin Scheduled Pickup Info -->
+                        <?php if ($isPickupScheduled): ?>
+                            <div class="admin-pickup-info">
+                                <h5><?php echo __('Pickup Scheduled'); ?></h5>
+                                <div class="pickup-details-grid">
+                                    <?php if ($rmaOrder->getPickupDate()): ?>
+                                        <div class="pickup-detail">
+                                            <span class="label"><?php echo __('Scheduled Date:'); ?></span>
+                                            <span class="value scheduled"><?php echo $block->formatDate($rmaOrder->getPickupDate(), \IntlDateFormatter::MEDIUM); ?></span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($rmaOrder->getPickupTimeSlot()): ?>
+                                        <div class="pickup-detail">
+                                            <span class="label"><?php echo __('Time Slot:'); ?></span>
+                                            <span class="value scheduled"><?php echo $block->escapeHtml($rmaOrder->getPickupTimeSlot()); ?></span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($rmaOrder->getCourierName()): ?>
+                                        <div class="pickup-detail">
+                                            <span class="label"><?php echo __('Courier:'); ?></span>
+                                            <span class="value"><?php echo $block->escapeHtml($rmaOrder->getCourierName()); ?></span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($rmaOrder->getTrackingNumber()): ?>
+                                        <div class="pickup-detail">
+                                            <span class="label"><?php echo __('Tracking Number:'); ?></span>
+                                            <span class="value"><?php echo $block->escapeHtml($rmaOrder->getTrackingNumber()); ?></span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Pickup Submission Form -->
+                <?php if ($canSubmitPickup): ?>
+                    <div class="pickup-submission-section">
+                        <div class="pickup-notification">
+                            <svg class="icon-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <div>
+                                <h4><?php echo __('Your Return/Exchange has been Approved!'); ?></h4>
+                                <p><?php echo __('Please provide your pickup details below so we can collect the item(s).'); ?></p>
+                            </div>
+                        </div>
+
+                        <form class="pickup-form" 
+                              method="post" 
+                              action="<?php echo $block->getUrl('rma/rma/submitPickup'); ?>"
+                              data-mage-init='{"validation":{}}'>
+                            
+                            <?php echo $block->getBlockHtml('formkey'); ?>
+                            <input type="hidden" name="rma_order_id" value="<?php echo $rmaOrder->getRmaOrderId(); ?>">
+
+                            <div class="form-row">
+                                <div class="field required">
+                                    <label class="label" for="customer_pickup_date_<?php echo $rmaOrder->getRmaOrderId(); ?>">
+                                        <span><?php echo __('Preferred Pickup Date'); ?></span>
+                                    </label>
+                                    <div class="control">
+    <input type="text" 
+           name="customer_pickup_date" 
+           id="customer_pickup_date_<?php echo $rmaOrder->getRmaOrderId(); ?>"
+           class="input-text datepicker"
+           data-validate="{required:true}"
+           placeholder="<?php echo __('Select date'); ?>" />
+</div>
+
+<script type="text/javascript">
+    require([
+        'jquery',
+        'mage/calendar'
+    ], function ($) {
+        $('#customer_pickup_date_<?php echo $rmaOrder->getRmaOrderId(); ?>').datepicker({
+            dateFormat: 'yy-mm-dd', // Format: 2025-11-07
+            minDate: 0, // Disable past dates
+            showButtonPanel: true,
+            changeMonth: true,
+            changeYear: true
+        });
+    });
+</script>
+
+                                </div>
+
+                                <div class="field required">
+                                    <label class="label" for="customer_pickup_time_slot_<?php echo $rmaOrder->getRmaOrderId(); ?>">
+                                        <span><?php echo __('Preferred Time Slot'); ?></span>
+                                    </label>
+                                    <div class="control">
+                                        <select name="customer_pickup_time_slot" 
+                                                id="customer_pickup_time_slot_<?php echo $rmaOrder->getRmaOrderId(); ?>"
+                                                class="select"
+                                                data-validate="{required:true}">
+                                            <option value=""><?php echo __('-- Select Time Slot --'); ?></option>
+                                            <option value="9:00 AM - 12:00 PM"><?php echo __('9:00 AM - 12:00 PM'); ?></option>
+                                            <option value="12:00 PM - 3:00 PM"><?php echo __('12:00 PM - 3:00 PM'); ?></option>
+                                            <option value="3:00 PM - 6:00 PM"><?php echo __('3:00 PM - 6:00 PM'); ?></option>
+                                            <option value="6:00 PM - 9:00 PM"><?php echo __('6:00 PM - 9:00 PM'); ?></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field required">
+                                    <label class="label" for="customer_pickup_contact_name_<?php echo $rmaOrder->getRmaOrderId(); ?>">
+                                        <span><?php echo __('Contact Name'); ?></span>
+                                    </label>
+                                    <div class="control">
+                                        <input type="text" 
+                                               name="customer_pickup_contact_name" 
+                                               id="customer_pickup_contact_name_<?php echo $rmaOrder->getRmaOrderId(); ?>"
+                                               class="input-text"
+                                               data-validate="{required:true}"
+                                               placeholder="<?php echo __('Your name'); ?>" />
+                                    </div>
+                                </div>
+
+                                <div class="field required">
+                                    <label class="label" for="customer_pickup_contact_phone_<?php echo $rmaOrder->getRmaOrderId(); ?>">
+                                        <span><?php echo __('Contact Phone'); ?></span>
+                                    </label>
+                                    <div class="control">
+                                        <input type="tel" 
+                                               name="customer_pickup_contact_phone" 
+                                               id="customer_pickup_contact_phone_<?php echo $rmaOrder->getRmaOrderId(); ?>"
+                                               class="input-text"
+                                               data-validate="{required:true}"
+                                               placeholder="<?php echo __('Your phone number'); ?>" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field required">
+                                <label class="label" for="customer_pickup_address_<?php echo $rmaOrder->getRmaOrderId(); ?>">
+                                    <span><?php echo __('Pickup Address'); ?></span>
+                                </label>
+                                <div class="control">
+                                    <textarea name="customer_pickup_address" 
+                                              id="customer_pickup_address_<?php echo $rmaOrder->getRmaOrderId(); ?>"
+                                              class="input-text"
+                                              rows="4"
+                                              data-validate="{required:true}"
+                                              placeholder="<?php echo __('Enter complete pickup address'); ?>"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label" for="customer_pickup_instructions_<?php echo $rmaOrder->getRmaOrderId(); ?>">
+                                    <span><?php echo __('Special Instructions (Optional)'); ?></span>
+                                </label>
+                                <div class="control">
+                                    <textarea name="customer_pickup_instructions" 
+                                              id="customer_pickup_instructions_<?php echo $rmaOrder->getRmaOrderId(); ?>"
+                                              class="input-text"
+                                              rows="3"
+                                              placeholder="<?php echo __('Any special instructions for pickup'); ?>"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="actions-toolbar">
+                                <div class="primary">
+                                    <button type="submit" class="action primary submit">
+                                        <span><?php echo __('Submit Pickup Details'); ?></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Status Timeline -->
+                <div class="status-timeline-section">
+                    <h4><?php echo __('Status History'); ?></h4>
+                    <div class="timeline">
+                        <?php 
+                        $history = $block->getStatusHistory($rmaOrder->getRmaOrderId());
+                        if (count($history) > 0):
+                            foreach ($history as $historyItem): 
+                        ?>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-status"><?php echo $block->escapeHtml($historyItem->getStatus()); ?></div>
+                                    <?php if ($historyItem->getComment()): ?>
+                                        <div class="timeline-comment"><?php echo $block->escapeHtml($historyItem->getComment()); ?></div>
+                                    <?php endif; ?>
+                                    <div class="timeline-date">
+                                        <?php echo $block->formatDate($historyItem->getCreatedAt(), \IntlDateFormatter::MEDIUM); ?>
+                                        <?php echo $block->formatTime($historyItem->getCreatedAt(), \IntlDateFormatter::SHORT); ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php 
+                            endforeach;
+                        else: 
+                        ?>
+                            <p class="no-history"><?php echo __('No status updates available.'); ?></p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <div class="no-rma-orders">
+            <p><?php echo __('You have no return or exchange requests.'); ?></p>
+            <a href="<?php echo $block->getUrl('sales/order/history'); ?>" class="action primary">
+                <span><?php echo __('View Orders'); ?></span>
+            </a>
+        </div>
+    <?php endif; ?>
+</div>
+
+<script type="text/x-magento-init">
+{
+    ".datepicker": {
+        "calendar": {
+            "dateFormat": "yy-mm-dd",
+            "minDate": 0,
+            "maxDate": "+30D",
+            "showButtonPanel": true,
+            "changeMonth": true,
+            "changeYear": false
+        }
+    }
+}
+</script>

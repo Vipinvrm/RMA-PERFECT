@@ -1,0 +1,297 @@
+<?php
+	$id = $this->getRequest()->getParam('id');
+	$orderData = $this->getOrderData($id);
+	
+	// Check if RMA is allowed
+	$rmaCheck = $this->isRmaAllowed($id);
+	$daysLimit = $this->getRmaDaysLimit();
+?>
+
+<?php if(!$rmaCheck['allowed']): ?>
+	<div class="message error">
+		<span><?php echo $rmaCheck['message']; ?></span>
+	</div>
+	<div class="actions-toolbar">
+		<div class="primary">
+			<a href="<?php echo $this->getUrl('sales/order/history'); ?>" class="action primary">
+				<span><?php echo __('Back to My Orders'); ?></span>
+			</a>
+		</div>
+	</div>
+<?php else: ?>
+
+<div class="block block-rma">
+	<div class="block-title">
+		<?php echo __('Create RMA Request - Select Type'); ?>
+	</div>
+	
+	<div class="block-content">
+		<div class="rma-info-message">
+			<p><?php echo __('You can request a exchange or return within %1 days of delivery.', $daysLimit); ?></p>
+		</div>
+
+		<form method="post" name="submit-return" id="submit-return" action="<?php echo $block->getUrl('rma/rma/save');?>">
+			<?php echo $block->getBlockHtml('formkey'); ?>
+			<input type="hidden" name="order_id" value="<?php echo $id; ?>">
+
+			<!-- RMA Type Selection -->
+			<div class="rma-type-selection">
+				<h3><?php echo __('Select Request Type'); ?></h3>
+				<div class="rma-type-options">
+					<label class="rma-type-option">
+						<input type="radio" name="rma_type" value="exchange" class="rma-type-radio" required checked>
+						<span class="rma-type-label">
+							<strong><?php echo __('Exchange'); ?></strong>
+							<small><?php echo __('Receive a replacement product'); ?></small>
+						</span>
+					</label>
+					<label class="rma-type-option">
+						<input type="radio" name="rma_type" value="return" class="rma-type-radio" required>
+						<span class="rma-type-label">
+							<strong><?php echo __('Return'); ?></strong>
+							<small><?php echo __('Exchange for another product'); ?></small>
+						</span>
+					</label>
+				</div>
+			</div>
+
+			<div class="block-title">
+				<?php echo __('Select Items to Process'); ?>
+			</div>
+
+			<?php foreach($orderData as $orderItem):?>
+				<div class="block-item clearfix">
+					<input type="hidden" name="item_id[<?php echo $orderItem['id']?>]" value="<?php echo $orderItem['id']?>">
+
+					<?php if(!count($this->checkRmaAvailable($orderItem['id']))):?>
+					<div class="rma-action">
+						<input type="checkbox" name="check[<?php echo $orderItem['id']?>]" value="on">
+					</div>
+					<?php else:?>	
+						<div class="rma-action">&nbsp;</div>
+					<?php endif;?>
+
+					<div class="rma-product-image">
+						<div class="thumb">
+							<img src="<?php echo $orderItem['img_url']?>">
+						</div>
+					</div>
+
+					<div class="rma-description">
+						<span class="name[<?php echo $orderItem['id']?>]"><?php echo $orderItem['name']?></span>
+						<?php if(array_key_exists('options', $orderItem) == true):?>
+							<?php foreach($orderItem['options'] as $option):?>
+								<span><?php echo $option['attribute']['label']?></span>
+								<span><?php echo $option['value']['label']?></span>
+							<?php endforeach;?>
+						<?php endif;?>
+					</div>
+
+					<?php if(!count($this->checkRmaAvailable($orderItem['id']))):?>
+
+					<div class="rma-reason-condition">
+						<div class="input-text">
+							<input value="<?php echo (int)$orderItem['qty'];?>" type="hidden" name="qty_return[<?php echo $orderItem['id']?>]">
+						</div>
+						<div class="input-text">
+							<label><?php echo __('Reason'); ?></label>
+							<select name="reason[<?php echo $orderItem['id']?>]" class="reason" data-item-id="<?php echo $orderItem['id']?>">
+								<option value=""><?php echo __('Please Select'); ?></option>
+							</select>
+						</div>
+						<div class="input-text">
+							<label><?php echo __('Condition'); ?></label>
+							<select name="condition[<?php echo $orderItem['id']?>]" class="condition" data-item-id="<?php echo $orderItem['id']?>">
+								<option value=""><?php echo __('Please Select'); ?></option>
+							</select>
+						</div>
+					</div>
+					<?php else:?>
+						<div class="rma-reason-condition">
+							<?php $rmaObj = $this->getAvailableRma($orderItem['id'])?>
+							<span class="message">
+								<?php echo __('Already Registered for RMA'); ?>
+							</span>
+							<dl>
+								<dt><?php echo __('Type:'); ?></dt>
+								<dd><?php echo ucfirst($rmaObj->getRmaType()); ?></dd>
+							</dl>
+							<dl>
+								<dt><?php echo __('Reason:'); ?></dt>
+								<dd><?php echo $rmaObj->getReason(); ?></dd>
+							</dl>
+							<dl>
+								<dt><?php echo __('Condition:'); ?></dt>
+								<dd><?php echo $rmaObj->getCondition(); ?></dd>
+							</dl>
+						</div>
+					<?php endif;?>
+				</div>
+			<?php endforeach;?>
+			<button type="submit" class="action primary"><?php echo __('Submit Request'); ?></button>
+		</form>
+	</div>
+</div>
+
+<script type="text/javascript">
+require([
+    'jquery'
+], function($) {
+    // Store reasons and conditions by type
+    var reasonsByType = {
+        'exchange': <?php echo json_encode(array_map(function($r) { return ['value' => $r->getTitle(), 'label' => $r->getTitle()]; }, iterator_to_array($this->getReasons('exchange')))); ?>,
+        'return': <?php echo json_encode(array_map(function($r) { return ['value' => $r->getTitle(), 'label' => $r->getTitle()]; }, iterator_to_array($this->getReasons('return')))); ?>
+    };
+
+    var conditionsByType = {
+        'exchange': <?php echo json_encode(array_map(function($c) { return ['value' => $c->getTitle(), 'label' => $c->getTitle()]; }, iterator_to_array($this->getConditions('exchange')))); ?>,
+        'return': <?php echo json_encode(array_map(function($c) { return ['value' => $c->getTitle(), 'label' => $c->getTitle()]; }, iterator_to_array($this->getConditions('return')))); ?>
+    };
+
+    function updateReasonsAndConditions(rmaType) {
+        // Update all reason dropdowns
+        $('.reason').each(function() {
+            var $select = $(this);
+            var itemId = $select.data('item-id');
+            var currentValue = $select.val();
+            
+            $select.empty();
+            $select.append('<option value=""><?php echo __('Please Select'); ?></option>');
+            
+            $.each(reasonsByType[rmaType], function(index, reason) {
+                $select.append($('<option></option>').attr('value', reason.value).text(reason.label));
+            });
+        });
+
+        // Update all condition dropdowns
+        $('.condition').each(function() {
+            var $select = $(this);
+            var itemId = $select.data('item-id');
+            var currentValue = $select.val();
+            
+            $select.empty();
+            $select.append('<option value=""><?php echo __('Please Select'); ?></option>');
+            
+            $.each(conditionsByType[rmaType], function(index, condition) {
+                $select.append($('<option></option>').attr('value', condition.value).text(condition.label));
+            });
+        });
+    }
+
+    // Initialize with default type (exchange)
+    updateReasonsAndConditions('exchange');
+
+    // Handle RMA type change
+    $('.rma-type-radio').on('change', function() {
+        var selectedType = $(this).val();
+        updateReasonsAndConditions(selectedType);
+    });
+
+    // Form validation
+    $('#submit-return').on('submit', function(e) {
+        var hasChecked = false;
+        var isValid = true;
+        var errorMessage = '';
+
+        // Check if at least one item is selected
+        $('input[name^="check"]').each(function() {
+            if($(this).is(':checked')) {
+                hasChecked = true;
+                var itemId = $(this).closest('.block-item').find('input[name^="item_id"]').val().match(/\d+/)[0];
+                
+                // Check if reason is selected
+                if($('select[name="reason[' + itemId + ']"]').val() == '') {
+                    isValid = false;
+                    errorMessage = '<?php echo __('Please select reason for all selected products.'); ?>';
+                    return false;
+                }
+                
+                // Check if condition is selected
+                if($('select[name="condition[' + itemId + ']"]').val() == '') {
+                    isValid = false;
+                    errorMessage = '<?php echo __('Please select condition for all selected products.'); ?>';
+                    return false;
+                }
+            }
+        });
+
+        if(!hasChecked) {
+            alert('<?php echo __('Please select at least one item.'); ?>');
+            e.preventDefault();
+            return false;
+        }
+
+        if(!isValid) {
+            alert(errorMessage);
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+
+<style>
+.rma-info-message {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.rma-type-selection {
+    margin: 20px 0 30px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+.rma-type-selection h3 {
+    margin: 0 0 15px;
+    font-size: 18px;
+}
+
+.rma-type-options {
+    display: flex;
+    gap: 20px;
+}
+
+.rma-type-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.rma-type-option:hover {
+    border-color: #1979c3;
+    background: #fff;
+}
+
+.rma-type-option input[type="radio"] {
+    margin-right: 10px;
+}
+
+.rma-type-option input[type="radio"]:checked + .rma-type-label {
+    color: #1979c3;
+}
+
+.rma-type-label {
+    display: flex;
+    flex-direction: column;
+}
+
+.rma-type-label strong {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.rma-type-label small {
+    color: #666;
+}
+</style>
+
+<?php endif; ?>

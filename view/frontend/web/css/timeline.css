@@ -1,0 +1,406 @@
+/* RMA History Page Styles */
+.block-rma-history {
+    padding: 20px 0;
+}
+
+.block-rma-history .block-title h1 {
+    font-size: 28px;
+    margin-bottom: 30px;
+    color: #333;
+    font-weight: 700;
+}
+
+.rma-order-item {
+    background: #fff;
+    border: 1px solid #e3e3e3;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.rma-order-header {
+    border-bottom: 2px solid #f5f5f5;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.rma-order-header h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.order-info {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    font-size: 14px;
+    color: #666;
+}
+
+.order-label {
+    font-weight: 600;
+    color: #333;
+}
+
+.order-value {
+    color: #1979c3;
+    font-weight: 600;
+}
+
+.order-date {
+    margin-left: auto;
+    color: #999;
+}
+
+/* Pickup Information Styles */
+.pickup-info-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.pickup-title {
+    font-size: 20px;
+    margin: 0 0 20px 0;
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.pickup-title svg {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.pickup-details {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pickup-row {
+    display: flex;
+    margin-bottom: 15px;
+    align-items: flex-start;
+}
+
+.pickup-row:last-child {
+    margin-bottom: 0;
+}
+
+.pickup-label {
+    font-weight: 600;
+    min-width: 140px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+}
+
+.pickup-value {
+    flex: 1;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.tracking-number {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    letter-spacing: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* Timeline Styles */
+.rma-timeline-container {
+    margin-top: 20px;
+}
+
+.rma-timeline-container h3 {
+    font-size: 20px;
+    margin-bottom: 30px;
+    color: #333;
+    font-weight: 600;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 50px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 30px;
+    bottom: 30px;
+    width: 2px;
+    background: linear-gradient(to bottom, #1979c3 0%, #e3e3e3 100%);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 40px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -50px;
+    top: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.timeline-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+.timeline-item.completed .timeline-icon {
+    color: #4caf50;
+}
+
+.timeline-item.current .timeline-icon {
+    color: #1979c3;
+}
+
+.timeline-content {
+    flex: 1;
+    background: #f9f9f9;
+    border-radius: 6px;
+    padding: 15px 20px;
+    margin-left: 20px;
+    border-left: 3px solid #1979c3;
+}
+
+.timeline-item.completed .timeline-content {
+    border-left-color: #4caf50;
+}
+
+.timeline-status {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.timeline-date {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 10px;
+}
+
+.timeline-comment {
+    font-size: 14px;
+    color: #666;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e3e3e3;
+    line-height: 1.6;
+}
+
+.timeline-comment strong {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Empty State */
+.message.info.empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 2px dashed #e3e3e3;
+}
+
+.message.info.empty span {
+    font-size: 16px;
+    color: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .rma-order-item {
+        padding: 15px;
+    }
+    
+    .rma-order-header h2 {
+        font-size: 20px;
+    }
+    
+    .order-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .order-date {
+        margin-left: 0;
+    }
+
+    .pickup-info-box {
+        padding: 20px;
+    }
+
+    .pickup-details {
+        padding: 15px;
+    }
+
+    .pickup-row {
+        flex-direction: column;
+        margin-bottom: 12px;
+    }
+
+    .pickup-label {
+        min-width: auto;
+        margin-bottom: 5px;
+    }
+    
+    .timeline {
+        padding-left: 40px;
+    }
+    
+    .timeline-marker {
+        left: -40px;
+    }
+    
+    .timeline-content {
+        margin-left: 15px;
+        padding: 12px 15px;
+    }
+    
+    .timeline-status {
+        font-size: 16px;
+    }
+}
+
+/* Animation for timeline items */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.timeline-item {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.timeline-item:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.timeline-item:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.timeline-item:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.timeline-item:nth-child(5) {
+    animation-delay: 0.4s;
+}
+
+/* Pickup Info Animation */
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pickup-info-box {
+    animation: slideInFromTop 0.6s ease-out;
+}
+
+/* Enhanced Timeline Status Display */
+.timeline-status {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
+}
+
+.timeline-item.completed .timeline-status {
+    color: #2e7d32;
+}
+
+.timeline-item.current .timeline-status {
+    color: #1565c0;
+    position: relative;
+    display: inline-block;
+}
+
+.timeline-item.current .timeline-status::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #1565c0;
+    border-radius: 50%;
+    right: -15px;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: translateY(-50%) scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: translateY(-50%) scale(1.2);
+    }
+}
+
+/* Status Badge Style (Optional) */
+.timeline-status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.timeline-item.completed .timeline-status-badge {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.timeline-item.current .timeline-status-badge {
+    background: #e3f2fd;
+    color: #1565c0;
+}

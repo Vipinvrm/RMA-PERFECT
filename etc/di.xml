@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<!-- File: etc/di.xml -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    
+    <!-- Plugin to automatically change order status to Shipped when shipment is created -->
+    <type name="Magento\Sales\Model\Order\Shipment">
+        <plugin name="krishaweb_rma_shipment_order_status" 
+                type="Krishaweb\Rma\Plugin\Shipment\OrderStatusPlugin" 
+                sortOrder="10" 
+                disabled="false"/>
+    </type>
+    
+    <!-- RMA Order Listing with Custom Collection -->
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="krishaweb_rma_listing_data_source" xsi:type="string">Krishaweb\Rma\Model\ResourceModel\Order\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Reason Listing -->
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="krishaweb_reason_listing_data_source" xsi:type="string">Krishaweb\Rma\Model\ResourceModel\Reason\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+    <virtualType name="Krishaweb\Rma\Model\ResourceModel\Reason\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">krishaweb_rma_reason</argument>
+            <argument name="resourceModel" xsi:type="string">Krishaweb\Rma\Model\ResourceModel\Reason</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Condition Listing -->
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="krishaweb_condition_listing_data_source" xsi:type="string">Krishaweb\Rma\Model\ResourceModel\Condition\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+    <virtualType name="Krishaweb\Rma\Model\ResourceModel\Condition\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">krishaweb_rma_condition</argument>
+            <argument name="resourceModel" xsi:type="string">Krishaweb\Rma\Model\ResourceModel\Condition</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Status Listing -->
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="krishaweb_status_listing_data_source" xsi:type="string">Krishaweb\Rma\Model\ResourceModel\Status\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+    <virtualType name="Krishaweb\Rma\Model\ResourceModel\Status\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">krishaweb_rma_status</argument>
+            <argument name="resourceModel" xsi:type="string">Krishaweb\Rma\Model\ResourceModel\Status</argument>
+        </arguments>
+    </virtualType>
+
+</config>
